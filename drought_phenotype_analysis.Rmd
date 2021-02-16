@@ -34,7 +34,10 @@ drought_phenotype_cleaned <- drought_phenotype %>%
   mutate_all(tolower) %>% 
   mutate(elevation = case_when(population == "sq1" | population == "wl2" | population == "yo1" | population == "sq3" ~ "high",
                                population == "dpr" | population == "kc2" | population == "wl1" ~ "intermediate",
-                               population == "tm2" | population == "bh" | population == "ih" ~ "low")) %>% 
+                               population == "tm2" | population == "bh" | population == "ih" ~ "low")) %>%
+    mutate(age = case_when(age == "a1" ~ "7wk",
+                         age == "a2" ~ "5wk",
+                         age == "a3" ~ "3wk")) %>%
   select(-rack, -block, -position)
 drought_phenotype_cleaned
 ```
