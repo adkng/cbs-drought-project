@@ -1,0 +1,47 @@
+---
+title: "drought phenotype analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Loading libraries
+```{r}
+library(tidyverse)
+library(RColorBrewer)
+library(paletteer)
+library(janitor)
+library(here)
+library(skimr)
+library(ggthemes)
+library(naniar)
+library(readr)
+```
+
+Loading data
+```{r}
+drought_phenotype <- readxl::read_xlsx("data/cbs_drought_project.xlsx", sheet = "Weekly Surveys (Flipped)")
+drought_phenotype
+```
+*Note: the numbers in the phenotype columns correspond to day of observation phenotype occurred.*
+
+Cleaning data
+```{r}
+drought_phenotype_cleaned <- drought_phenotype %>% 
+  clean_names() %>% 
+  mutate_all(tolower) %>% 
+  mutate(elevation = case_when(population == "sq1" | population == "wl2" | population == "yo1" | population == "sq3" ~ "high",
+                               population == "dpr" | population == "kc2" | population == "wl1" ~ "intermediate",
+                               population == "tm2" | population == "bh" | population == "ih" ~ "low")) %>% 
+  select(-rack, -block, -position)
+drought_phenotype_cleaned
+```
+
+
+
+
+
+
+

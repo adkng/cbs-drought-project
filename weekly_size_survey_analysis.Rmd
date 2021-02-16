@@ -13,10 +13,20 @@ knitr::opts_chunk$set(echo = TRUE)
 Loading libraries
 ```{r}
 library(tidyverse)
-library(skimr)
+library(RColorBrewer)
+library(paletteer)
 library(janitor)
 library(here)
-library(readxl)
+library(skimr)
+library(ggthemes)
+library(naniar)
+library(readr)
+```
+
+Loading colors
+```{r}
+colors <- paletteer::palettes_d_names
+view(colors)
 ```
 
 Loading data
@@ -48,102 +58,93 @@ weekly_size_cleaned
 ```{r}
 weekly_size_cleaned <- weekly_size_cleaned %>% 
   mutate(day = day - 9)
+weekly_size_cleaned
+```
+
+```{r}
+weekly_size_cleaned <- weekly_size_cleaned %>%
+  mutate(elevation = case_when(pop == "sq1" | pop == "wl2" | pop == "yo1" | pop == "sq3" ~ "high",
+                               pop == "dpr" | pop == "kc2" | pop == "wl1" ~ "intermediate",
+                               pop == "tm2" | pop == "bh" | pop == "ih" ~ "low")) %>% 
+  mutate(age = case_when(age == "a1" ~ "7wk",
+                         age == "a2" ~ "5wk",
+                         age == "a3" ~ "3wk")) %>% 
+  select(-month)
+glimpse(weekly_size_cleaned)
+weekly_size_cleaned
+```
+
+Weekly Size Survey: Height
+
+```{r}
+summary(weekly_size_cleaned)
 ```
 
 
-Prelim Data Analysis: Height (cm)
 ```{r}
-names(weekly_size_cleaned)
-weekly_size_cleaned %>%
-  select(-month, -rep) %>% 
+weekly_size_cleaned %>% 
   filter(treatment == "severe drought", size_measurement == "height") %>%
-  group_by(pop) %>% 
-  summarise(mean_height = mean(measurement)) %>% 
-  ggplot(aes(x = pop, y = mean_height)) +
-  geom_col()
+  filter(pop != "NA") %>% 
+  ggplot(aes(x = pop, y = measurement, color = elevation)) +
+  geom_boxplot() +
+  labs(x = "pop",
+       y = "height (cm)") +
+  ggsave("severe_drought_height_boxplot_new.pdf", path = "plots")
 ```
-
 ```{r}
-weekly_size_cleaned %>%
-  select(-month, -rep) %>% 
-  filter(treatment == "control", size_measurement == "height") %>%
-  group_by(pop) %>% 
-  summarise(mean_height = mean(measurement)) %>% 
-  ggplot(aes(x = pop, y = mean_height)) +
-  geom_col() %>% 
-  ggsave("control_mean_height.pdf", path = "/plots")
-```
-
-```{r}
-weekly_size_cleaned %>%
-  select(-month, -rep) %>% 
+weekly_size_cleaned %>% 
   filter(treatment == "light drought", size_measurement == "height") %>%
-  group_by(pop) %>% 
-  summarise(mean_height = mean(measurement)) %>% 
-  ggplot(aes(x = pop, y = mean_height)) +
-  geom_col()
+  filter(pop != "NA") %>% 
+  ggplot(aes(x = pop, y = measurement, color = elevation)) +
+  geom_boxplot() +
+  labs(x = "pop",
+       y = "height (cm)")
 ```
-
 ```{r}
-weekly_size_cleaned %>%
-  select(-month, -rep) %>% 
-  filter(treatment == "severe drought", size_measurement == "height") %>%
-  group_by(pop) %>% 
-  ggplot(aes(x = pop, y = measurement)) +
-  geom_boxplot()
-```
-
-```{r}
-weekly_size_cleaned %>%
-  select(-month, -rep) %>% 
-  filter(treatment == "light drought", size_measurement == "height") %>%
-  group_by(pop) %>% 
-  ggplot(aes(x = pop, y = measurement)) +
-  geom_boxplot()
-```
-
-```{r}
-weekly_size_cleaned %>%
-  select(-month, -rep) %>% 
+weekly_size_cleaned %>% 
   filter(treatment == "control", size_measurement == "height") %>%
-  group_by(pop) %>% 
-  ggplot(aes(x = pop, y = measurement)) +
-  geom_boxplot()
+  filter(pop != "NA") %>% 
+  ggplot(aes(x = pop, y = measurement, color = elevation)) +
+  geom_boxplot() +
+  labs(x = "pop",
+       y = "height (cm)")
 ```
-
-
-
-
-
-
-Prelim Data Analysis: Number Leaves
 ```{r}
-weekly_size_cleaned %>%
-  select(-month, -rep) %>% 
-  filter(treatment == "severe drought", size_measurement == "numleaf") %>%
-  group_by(pop) %>% 
-  summarise(mean_numleaf = mean(measurement)) %>% 
-  ggplot(aes(x = pop, y = mean_numleaf)) +
-  geom_col()
+weekly_size_cleaned %>% 
+  filter(size_measurement == "height") %>%
+  ggplot(aes(x = pop, y = measurement, color = elevation, fill = treatment)) +
+  geom_boxplot() +
+  labs(x = "pop",
+       y = "height (cm)")
 ```
-
 ```{r}
-weekly_size_cleaned %>%
-  select(-month, -rep) %>% 
-  filter(treatment == "control", size_measurement == "numleaf") %>%
-  group_by(pop) %>% 
-  summarise(mean_numleaf = mean(measurement)) %>% 
-  ggplot(aes(x = pop, y = mean_numleaf)) +
-  geom_col()
+weekly_size_cleaned %>% 
+  filter(size_measurement == "height") %>%
+  filter(pop != "NA") %>% 
+  group_by(pop, treatment) %>% 
+  summarise(mean_height = mean(measurement)) %>% 
+  ggplot(aes(x = pop, y = mean_height, fill = pop)) +
+  scale_fill_manual(values = paletteer::paletteer_d("LaCroixColoR::paired")) +
+  geom_col(position = "dodge") +
+  facet_wrap(~treatment) +
+  labs(x = "pop",
+       y = "height (cm)")
 ```
 
 ```{r}
-weekly_size_cleaned %>%
-  select(-month, -rep) %>% 
-  filter(treatment == "light drought", size_measurement == "numleaf") %>%
-  group_by(pop) %>% 
-  summarise(mean_numleaf = mean(measurement)) %>% 
-  ggplot(aes(x = pop, y = mean_numleaf)) +
-  geom_col()
+weekly_size_cleaned %>% 
+  filter(size_measurement == "height") %>%
+  filter(pop != "NA") %>% 
+  group_by(pop, treatment, age) %>% 
+  summarise(mean_height = mean(measurement)) %>% 
+  ggplot(aes(x = age, y = mean_height, fill = pop)) +
+  scale_fill_manual(values = paletteer::paletteer_d("LaCroixColoR::paired")) +
+  geom_col(position = "dodge") +
+  facet_wrap(~pop) +
+  labs(x = "pop",
+       y = "height (cm)")
 ```
 
+
+
+Weekly Size Survey: 
