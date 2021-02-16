@@ -135,9 +135,9 @@ weekly_size_cleaned %>%
 weekly_size_cleaned %>% 
   filter(size_measurement == "height") %>%
   filter(pop != "NA") %>% 
-  group_by(pop, treatment, age) %>% 
+  group_by(pop, treatment, age, elevation) %>% 
   summarise(mean_height = mean(measurement)) %>% 
-  ggplot(aes(x = age, y = mean_height, fill = pop)) +
+  ggplot(aes(x = age, y = mean_height, fill = elevation)) +
   scale_fill_manual(values = paletteer::paletteer_d("LaCroixColoR::paired")) +
   geom_col(position = "dodge") +
   facet_wrap(~pop) +
