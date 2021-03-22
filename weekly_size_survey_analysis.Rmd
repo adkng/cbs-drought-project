@@ -26,7 +26,7 @@ library(readr)
 Loading colors
 ```{r}
 colors <- paletteer::palettes_d_names
-view(colors)
+#view(colors)
 ```
 
 Loading data
@@ -89,7 +89,9 @@ weekly_size_cleaned %>%
   geom_boxplot() +
   labs(x = "pop",
        y = "height (cm)") +
+  ylim(0,8)+
   ggsave("severe_drought_height_boxplot_new.pdf", path = "plots")
+  
 ```
 ```{r}
 weekly_size_cleaned %>% 
@@ -98,7 +100,8 @@ weekly_size_cleaned %>%
   ggplot(aes(x = pop, y = measurement, color = elevation)) +
   geom_boxplot() +
   labs(x = "pop",
-       y = "height (cm)")
+       y = "height (cm)") +
+  ylim(0, 10)
 ```
 ```{r}
 weekly_size_cleaned %>% 
@@ -107,15 +110,18 @@ weekly_size_cleaned %>%
   ggplot(aes(x = pop, y = measurement, color = elevation)) +
   geom_boxplot() +
   labs(x = "pop",
-       y = "height (cm)")
+       y = "height (cm)") +
+  ylim(0, 10)
 ```
 ```{r}
 weekly_size_cleaned %>% 
   filter(size_measurement == "height") %>%
+  filter(measurement != "NA") %>% 
   ggplot(aes(x = pop, y = measurement, color = elevation, fill = treatment)) +
   geom_boxplot() +
   labs(x = "pop",
-       y = "height (cm)")
+       y = "height (cm)") +
+  ylim(0, 10)
 ```
 ```{r}
 weekly_size_cleaned %>% 
@@ -135,6 +141,21 @@ weekly_size_cleaned %>%
 weekly_size_cleaned %>% 
   filter(size_measurement == "height") %>%
   filter(pop != "NA") %>% 
+  group_by(pop, treatment) %>% 
+  summarise(mean_height = mean(measurement)) %>% 
+  ggplot(aes(x = treatment, y = mean_height, color = pop)) +
+  scale_color_manual(values = paletteer::paletteer_d("LaCroixColoR::paired")) +
+  geom_point()+
+  geom_line(aes(group = pop))+
+  labs(x = "pop",
+       y = "height (cm)")
+```
+
+
+```{r}
+weekly_size_cleaned %>% 
+  filter(size_measurement == "height") %>%
+  filter(pop != "NA") %>% 
   group_by(pop, treatment, age, elevation) %>% 
   summarise(mean_height = mean(measurement)) %>% 
   ggplot(aes(x = age, y = mean_height, fill = elevation)) +
@@ -145,6 +166,112 @@ weekly_size_cleaned %>%
        y = "height (cm)")
 ```
 
+```{r}
+weekly_size_cleaned %>% 
+  filter(size_measurement == "height") %>%
+  filter(pop != "NA") %>% 
+  group_by(pop, treatment, age, elevation) %>% 
+  summarise(mean_height = mean(measurement)) %>% 
+  ggplot(aes(x = age, y = mean_height, fill = elevation)) +
+  scale_fill_manual(values = paletteer::paletteer_d("LaCroixColoR::paired")) +
+  geom_col(position = "dodge") +
+  facet_wrap(~pop) +
+  labs(x = "pop",
+       y = "height (cm)")
+```
+
+```{r}
+weekly_size_cleaned %>% 
+  filter(treatment == "control", size_measurement == "height", age == "3wk") %>%
+  filter(pop != "NA") %>% 
+  ggplot(aes(x = pop, y = measurement, color = elevation)) +
+  geom_boxplot() +
+  labs(x = "pop",
+       y = "height (cm)") +
+  ylim(0, 10)
+```
+
+```{r}
+weekly_size_cleaned %>% 
+  filter(treatment == "control", size_measurement == "height", age == "5wk") %>%
+  filter(pop != "NA") %>% 
+  ggplot(aes(x = pop, y = measurement, color = elevation)) +
+  geom_boxplot() +
+  labs(x = "pop",
+       y = "height (cm)") +
+  ylim(0, 10)
+```
+
+```{r}
+weekly_size_cleaned %>% 
+  filter(treatment == "control", size_measurement == "height", age == "7wk") %>%
+  filter(pop != "NA") %>% 
+  ggplot(aes(x = pop, y = measurement, color = elevation)) +
+  geom_boxplot() +
+  labs(x = "pop",
+       y = "height (cm)") +
+  ylim(0, 10)
+```
+
+```{r}
+weekly_size_cleaned %>% 
+  filter(treatment == "light drought", size_measurement == "height", age == "7wk") %>%
+  filter(pop != "NA") %>% 
+  ggplot(aes(x = pop, y = measurement, color = elevation)) +
+  geom_boxplot() +
+  labs(x = "pop",
+       y = "height (cm)") +
+  ylim(0, 10)
+```
+
+```{r}
+weekly_size_cleaned %>% 
+  filter(treatment == "control", size_measurement == "height", age == "3wk") %>%
+  filter(pop != "NA") %>% 
+  ggplot(aes(x = pop, y = measurement, fill = elevation)) +
+  geom_boxplot() +
+  labs(x = "pop",
+       y = "height (cm)") +
+  ylim(0, 10)
+```
 
 
-Weekly Size Survey: 
+```{r}
+weekly_size_cleaned %>% 
+  filter(treatment == "control", size_measurement == "height", age == "5wk") %>%
+  filter(pop != "NA") %>% 
+  ggplot(aes(x = pop, y = measurement, fill = elevation)) +
+  geom_boxplot() +
+  labs(x = "pop",
+       y = "height (cm)") +
+  ylim(0, 10)
+```
+
+```{r}
+weekly_size_cleaned %>% 
+  filter(treatment == "control", size_measurement == "height", age == "7wk") %>%
+  filter(pop != "NA") %>% 
+  ggplot(aes(x = pop, y = measurement, fill = elevation)) +
+  geom_boxplot() +
+  labs(x = "pop",
+       y = "height (cm)") +
+  ylim(0, 10)
+```
+
+
+
+```{r}
+weekly_size_cleaned %>% 
+  filter(treatment == "control", size_measurement == "height") %>%
+  filter(pop != "NA") %>% 
+  ggplot(aes(x = age, y = measurement, fill = pop)) +
+  geom_boxplot() +
+  labs(x = "age",
+       y = "height (cm)") +
+  ylim(0, 10)
+```
+
+```{r}
+
+```
+
