@@ -1,0 +1,153 @@
+---
+title: "Model fitting"
+author: "Megan Bontrager"
+date: "3/17/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(mosaic)
+library(readxl)
+library(lme4)
+library(lmerTest)
+library(ggeffects)
+
+```
+
+## Load data
+
+```{r data}
+
+pre_trt_height = read_xlsx("data/cbs_drought_project.xlsx", 
+                           sheet = "Location & Height Pre-Treatment") %>% 
+  select(-`Number Leaves`, -`Longest Leaf (cm)`) %>% 
+  rename(Height_pretrt_cm = `Height (cm)`, pop = Population, rep = Replicate) %>% 
+  rename_all(.funs = tolower)
+
+weekly_size = read_xlsx("data/cbs_drought_project.xlsx", 
+                        sheet = "Weekly Surveys (complete racks)") %>% 
+  filter(!is.na(rep))
+
+# Make tall
+weekly_size_tall = weekly_size %>% 
+  left_join(pre_trt_height) %>% 
+  select(-position, -block, -rack) %>% 
+  # NEED TO UPDATE BELOW DATE WITH ACTUAL DATE OF PRE-TRT MEASUREMENTS
+  rename(`09_20_height_cm` = height_pretrt_cm) %>% 
+  pivot_longer(`10_09_height_cm`:`09_20_height_cm`) %>% 
+  separate(name, 6, into = c("date", "variable")) %>% 
+  pivot_wider(id_cols = c(pop, age, rep, treatment, date), names_from = variable, values_from = value, values_fn = mean) %>% 
+  mutate(date = as.Date(paste0(date, 2020), format = "%m_%d_%Y"))
+# May want to make a day of expt column or something to match wilting dates
+
+wilting_dates = read_xlsx("data/cbs_drought_project.xlsx", 
+                           sheet = "Weekly Surveys (Flipped)") %>% 
+  rename(pop = Population, rep = Replicate) %>% 
+  rename_all(.funs = tolower) %>% 
+  mutate(wilted = as.numeric(wilted))
+# Some of these are still coded as month_day, let's make them consistent
+
+
+```
+
+## Explore data, check for errors
+
+Wondering if we have:
+- Takedown data
+
+```{r data validation, eval = FALSE}
+
+summary(pre_trt_height)
+# What date were these measurements made on and were the # leaves and longest leaf measurements completed?
+# One height measurement is missing
+table(pre_trt_height$pop)
+table(pre_trt_height$treatment)
+# WL2 is over-represented by 1, WL1 is underrepresented by 1, is this a mix-up?
+table(pre_trt_height$pop,pre_trt_height$block, pre_trt_height$age)
+# Occurs in block 10, Age 3
+# There is also an instance of 2 IH A1 seedlings in block 12 and no IH A3 seedling in block 12
+summary(pre_trt_height)
+boxplot(pre_trt_height$height_pretrt_cm ~ pre_trt_height$population)
+# Are blocks/racks in pretrt height the final positions, or positions before rearrangement?
+
+summary(weekly_size)
+hist(weekly_size$`10_09_height_cm`, breaks = 40)
+boxplot(weekly_size$`10_09_height_cm` ~ weekly_size$pop)
+# Outlier at 29. Data entry error or one of the non-streptanthus tricksters?
+hist(weekly_size$`10_18_height_cm`, breaks = 40) # Looks good
+boxplot(weekly_size$`10_18_height_cm` ~ weekly_size$pop)
+hist(weekly_size$`10_23_height_cm`, breaks = 40) # Looks good
+boxplot(weekly_size$`10_23_height_cm` ~ weekly_size$pop)
+hist(weekly_size$`10_30_height_cm`, breaks = 40) 
+boxplot(weekly_size$`10_30_height_cm` ~ weekly_size$pop)
+# Outlier at 21.5. Data entry error or one of the non-streptanthus tricksters?
+
+# When weekly size is made tall, get an error message about non-unique values. Why?
+check = weekly_size %>% 
+  group_by(pop, age, rep, treatment) %>% 
+  summarize(n = n())
+# It's because these two identities are duplicated:
+# IH	A1	12	Light drought	
+# WL2	A3	10	Control	
+
+summary(wilting_dates)
+# We should finish coding these consistently-some are numbers and some are dates with an underscore still. 
+# Let's make sure to write down metadata about how each of these was scored, i.e., what does a leaning vs. curled vs. wrinkled vs. wilted plant look like?
+# Also, let's document what the number means. Is it day of month or day of expt. and if day of expt, what is day 1?
+table(wilting_dates$age)
+# One age is "1"
+
+```
+
+
+
+## Q1: How do seedlings of different sizes respond to moderate and severe drought?
+
+Response variables: 
+- change in size over time
+- final size
+- wilting date (in severe trt)
+
+```{r}
+
+final_size = weekly_size_tall %>% 
+  filter(date == "2020-10-30") %>% 
+  filter(height_cm > 0)
+
+hist(final_size$height_cm)
+hist(log(final_size$height_cm))
+
+mod_fs = lmer(log(height_cm) ~ age*treatment + (1|pop), data = final_size)
+summary(mod_fs)
+
+plot_fs = ggeffect(mod_fs, terms = c("age", "treatment"))
+
+plot(plot_fs)
+
+
+# Need to set this up as time-to-event model
+wilting_dates_severe = wilting_dates %>% 
+  filter(treatment == "Severe drought", age != 1) #%>% 
+  # mutate(wilted = ifelse(is.na(wilted), 30, wilted))
+
+summary(wilting_dates_severe)
+
+mod_wd = lmer(wilted ~ age + (1|pop), data = wilting_dates_severe)
+summary(mod_wd)
+
+plot_wd = ggeffect(mod_wd, terms = c("age"))
+
+plot(plot_wd)
+
+```
+
+
+
+
+## Q2: Are there differences among populations in seedlings' ability to withstand drought?
+
+
+
+## Q3: Can these responses (and their implications) be better understood in the context of weather patterns from sites-of-origin?
