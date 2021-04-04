@@ -1,0 +1,189 @@
+---
+title: "drought_analysis_v2"
+output: html_document
+---
+
+Loading libraries
+```{r}
+library(tidyverse)
+library(RColorBrewer)
+library(paletteer)
+library(janitor)
+library(here)
+library(skimr)
+library(ggthemes)
+library(naniar)
+library(readr)
+```
+
+## Height and Size Analysis: Pre-treatment and during treatment
+
+Loading data:
+```{r}
+pre_trt_height = read_xlsx("data/cbs_drought_project.xlsx", 
+                           sheet = "Location & Height Pre-Treatment") %>% 
+  select(-`Number Leaves`, -`Longest Leaf (cm)`) %>% 
+  rename(Height_pretrt_cm = `Height (cm)`, pop = Population, rep = Replicate) %>% 
+  rename_all(.funs = tolower)
+pre_trt_height
+```
+
+```{r}
+weekly_size = read_xlsx("data/cbs_drought_project.xlsx", sheet = "Weekly Surveys (complete racks)") %>% 
+  filter(!is.na(rep))
+weekly_size
+```
+
+```{r}
+weekly_size_tall <- weekly_size %>% 
+  left_join(pre_trt_height) %>% 
+  select(-position, -block, -rack) %>% 
+  rename(`09_30_height_cm` = height_pretrt_cm) %>% 
+  pivot_longer(`10_09_height_cm`:`09_30_height_cm`) %>% 
+  separate(name, 6, into = c("date", "variable")) %>% 
+  pivot_wider(id_cols = c(pop, age, rep, treatment, date), names_from = variable, values_from = value, values_fn = mean) %>% 
+  mutate(date = as.Date(paste0(date, 2020), format = "%m_%d_%Y"))
+# May want to make a day of expt column or something to match wilting dates
+weekly_size_tall
+```
+
+```{r}
+wilting_dates = read_xlsx("data/cbs_drought_project.xlsx", 
+                           sheet = "Weekly Surveys (Flipped)") %>% 
+  rename(pop = Population, rep = Replicate) %>% 
+  rename_all(.funs = tolower) %>% 
+  mutate(wilted = as.numeric(wilted))
+# Some of these are still coded as month_day, let's make them consistent
+```
+
+Exploring data:
+```{r}
+summary(pre_trt_height)
+```
+*What date were these measurements made on and were the # leaves and longest leaf measurements completed?*
+Measurements were made on 9/30/2020. Number of leaves should have been completed, but longest leaf measurements were most likely forgone for lack of follow-up measurements (not enough time/energy to continue follow-up).
+
+*One height measurement is missing*: Yes, KC2-A1-10 is missing. I will look into my data sheets to see if it was recorded.
+
+```{r}
+table(pre_trt_height$pop)
+table(pre_trt_height$treatment)
+```
+
+*WL2 is over-represented by 1, WL1 is underrepresented by 1, is this a mix-up?*
+```{r}
+table(pre_trt_height$pop,pre_trt_height$block, pre_trt_height$age)
+```
+*Occurs in block 10, Age 3...* It has been corrected as of 4/4/2021: The mix-up was due to a typo.
+*There is also an instance of 2 IH A1 seedlings in block 12 and no IH A3 seedling in block 12* It has been corrected as of 4/4/2021: The mix-up was due to a typo on the label.
+
+```{r}
+summary(pre_trt_height)
+```
+
+```{r}
+boxplot(pre_trt_height$height_pretrt_cm ~ pre_trt_height$pop)
+```
+*Are blocks/racks in pretrt height the final positions, or positions before rearrangement?* Blocks and racks in the pretrt height are their "final" positions after the rearrangement to make a full six racks.
+
+```{r}
+summary(weekly_size)
+```
+
+```{r}
+boxplot(weekly_size$`10_09_height_cm` ~ weekly_size$pop)
+```
+*Outlier at 29. Data entry error or one of the non-streptanthus tricksters?* Fixed as of 4/4/2021: data entry error (transposed a `.`)
+
+```{r}
+hist(weekly_size$`10_18_height_cm`, breaks = 40)
+```
+```{r}
+boxplot(weekly_size$`10_18_height_cm` ~ weekly_size$pop)
+```
+
+```{r}
+hist(weekly_size$`10_23_height_cm`, breaks = 40)
+```
+
+```{r}
+boxplot(weekly_size$`10_23_height_cm` ~ weekly_size$pop)
+```
+
+```{r}
+hist(weekly_size$`10_30_height_cm`, breaks = 40) 
+```
+
+```{r}
+boxplot(weekly_size$`10_30_height_cm` ~ weekly_size$pop)
+```
+*Outlier at 21.5. Data entry error or one of the non-streptanthus tricksters?* Indeed, a non-Steptanthus trickster! SQ3-A2-10.
+
+```{r}
+check = weekly_size %>% 
+  group_by(pop, age, rep, treatment) %>% 
+  summarize(n = n())
+```
+*When weekly size is made tall, get an error message about non-unique values. Why?* Fixed on 4/4/2021. See above.
+
+```{r}
+summary(wilting_dates)
+```
+
+*We should finish coding these consistently-some are numbers and some are dates with an underscore still.* Fixed on 4/4/2021.
+
+*Let's make sure to write down metadata about how each of these was scored, i.e., what does a leaning vs. curled vs. wrinkled vs. wilted plant look like?* Great idea: here's a rough list so I don't forget later.
++ `Leaning` phenotypes were designated when the upper half of the plant (closer to the top) were beginning to lean down at ~45-65 degree angles (were not "standing up straight").
++ `Curled` phenotypes were designated when the plant leaves began to curl in on themselves.
++ `Wrinkled` phenotypes were designated when the plant leaves began to show signs of wrinkling (e.g. no longer smooth or flat).
++ `Wilted` phenotypes were designated when the plant was "dry" and crisp to the touch.
++ `Color` phenotypes were designated based on the color of the plant at the time of observation. Dates were written when the plant was beginning to show a *new* phenotype only, i.e., it was recorded once that a plant transitioned to redgreen and once recorded when transitioned to red.
+
+*Also, let's document what the number means. Is it day of month or day of expt. and if day of expt, what is day 1?*
+The numbers in this data sheet correspond to the day of the experiment: `day 0`, `day 2`, and so on and so forth. On a calendar, the first day of the experiment was 10/01/2020 and the first day of observations was 10/09/2020.
+
+```{r}
+table(wilting_dates$age)
+```
+*One age is "1".* Fixed on 4/4/2021. Data entry error.
+
+## Weekly Survey Analysis: Phenotypic Differences
+
+Loading data:
+```{r}
+weekly_pheno <- readxl::read_xlsx("data/cbs_drought_project.xlsx", sheet = "Weekly Surveys (Flipped)")
+weekly_pheno
+```
+
+Numbers in the phenotype columns denote the numeric (and not calendar day) in which the phenotype was observed (e.g. day 0, day 17, etc.)
+
+Cleaning data
+```{r}
+weekly_pheno_cleaned <- weekly_pheno %>% 
+  clean_names() %>% 
+  mutate_all(tolower) %>% 
+  mutate(elevation = case_when(population == "sq1" | population == "wl2" | population == "yo1" | population == "sq3" ~ "high",
+                               population == "dpr" | population == "kc2" | population == "wl1" ~ "intermediate",
+                               population == "tm2" | population == "bh" | population == "ih" ~ "low")) %>%
+    mutate(age = case_when(age == "a1" ~ "7wk",
+                         age == "a2" ~ "5wk",
+                         age == "a3" ~ "3wk")) %>%
+  select(-rack, -block, -position)
+weekly_pheno_cleaned
+```
+
+Checking data
+```{r}
+tabyl(weekly_pheno_cleaned, population)
+```
+There are 10 populations present, with `none` corresponding to replicates of a population removed from their original position in the rack (due to either a lack of growth, or shuffling to complete priority racks).
+
+```{r}
+summary(weekly_pheno_cleaned)
+```
+
+```{r}
+table(weekly_pheno_cleaned$population)
+```
+
+

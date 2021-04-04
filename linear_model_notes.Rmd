@@ -1,0 +1,104 @@
+---
+title: "regressions_practice"
+output: html_document
+---
+
+#Swirl Course
+
+```{r}
+swirl::install_course("Regression Models")
+```
+
+```{r}
+swirl()
+```
+
+
+#UC Davis Linear Models
+
+##What is a linear model?
+
+A linear model is a model for a continuous outcome `y` of the form: 
+`Y=β0+β1X1+β2X2+⋯+βpXp+ϵ`
+
+The covariates `x` can be a continuous variable (age, weight, temperature) or a dummy variable coding for a categorical covariate.
+
+`ϵ` is assumed to be normally distributed with constant variance across range of data.
+
+Models with *all categorical covariates* are ANOVA models. Models with *continuous covariates* are linear regression models. They're both linear models, so R does not distinguish between them.
+
+```{r}
+linear_model_ex <- read.csv("https://raw.githubusercontent.com/ucdavis-bioinformatics-training/2018-September-Bioinformatics-Prerequisites/master/friday/lm_example_data.csv")
+
+head(linear_model_ex)
+```
+
+```{r}
+str(linear_model_ex)
+```
+
+```{r}
+summary(linear_model_ex)
+```
+
+Now that we have data, fit it to a model using `expression` as the outcome and `treatment` as a categorical covariate.
+```{r}
+oneway_model <- lm(expression ~ treatment, data = linear_model_ex)
+```
+
+```{r}
+oneway_model
+```
+
+The outcome of the model is on the left side, with covariates separated by `+` following the `~` symbol.
+
+```{r}
+class(oneway_model)
+```
+
+Using `summary` on an `lm` object will give p-values and other relevant information.
+```{r}
+summary(oneway_model)
+```
+
+What does it all mean?
++ Coefficients are the `β`
++ Estimate is the estimate of each coefficient
++ Std. error is the standard error of the estimate
++ `t value` is the coefficient divided by its standard error
++ Pr(>|t|) is the p-value for the coefficient
++ The residual standard error is estimate of variance of `ϵ`
++ Degrees of freedom is the sample size minus the number of coefficients estimated
++ R-squared is (roughly) the proportion of variance in the outcome explained by the model
++ The F-statistic compares the fit of the model *as a whole* to the null model (with no covariates)
+
+`coef()` gives you model coefficients:
+```{r}
+coef(oneway_model)
+```
+
+What do `model coefficients` mean?
+R uses reference group coding or 'treatment contrasts'. For categorical covariates, the first level alphabetically (or first level factor) is the `reference group`. The reference group does not have its own coefficient and is represented by the intercept instead. Coefficients for other groups are the *difference from the reference*:
+
+In this example:
++ `Intercept` is the *mean of expression for treatment* = A
++ `treatmentB` is the mean expression for treatment B minus the mean for treatment A
++ `treatmentC` is the mean expression for treatment C minus the mean for treatment A
+
+If you want to get the means in each treatment:
+```{r}
+treatmentmeans <- tapply(linear_model_ex$expression, linear_model_ex$treatment, mean)
+treatmentmeans["A"]
+```
+
+If you want to find the difference in means for your coefficient:
+```{r}
+treatmentmeans["B"] - treatmentmeans["A"]
+```
+
+If you do not want to reference group coding, you can fit the model without an intercept:
+```{r}
+no_intercept_model <- lm(expression ~ 0 + treatment, data = linear_model_ex) # 0 = no intercept
+summary(no_intercept_model)
+```
+
