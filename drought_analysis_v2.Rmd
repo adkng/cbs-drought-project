@@ -14,13 +14,14 @@ library(skimr)
 library(ggthemes)
 library(naniar)
 library(readr)
+library(readxl)
 ```
 
 ## Height and Size Analysis: Pre-treatment and during treatment
 
 Loading data:
 ```{r}
-pre_trt_height = read_xlsx("data/cbs_drought_project.xlsx", 
+pre_trt_height = readxl::read_xlsx("data/cbs_drought_project.xlsx", 
                            sheet = "Location & Height Pre-Treatment") %>% 
   select(-`Number Leaves`, -`Longest Leaf (cm)`) %>% 
   rename(Height_pretrt_cm = `Height (cm)`, pop = Population, rep = Replicate) %>% 
@@ -29,7 +30,7 @@ pre_trt_height
 ```
 
 ```{r}
-weekly_size = read_xlsx("data/cbs_drought_project.xlsx", sheet = "Weekly Surveys (complete racks)") %>% 
+weekly_size = readxl::read_xlsx("data/cbs_drought_project.xlsx", sheet = "Weekly Surveys (complete racks)") %>% 
   filter(!is.na(rep))
 weekly_size
 ```
@@ -46,6 +47,32 @@ weekly_size_tall <- weekly_size %>%
 # May want to make a day of expt column or something to match wilting dates
 weekly_size_tall
 ```
+```{r}
+weekly_size_tall <- weekly_size %>% 
+  left_join(pre_trt_height) %>% 
+  select(-position, -block, -rack)
+
+col_order <- c("pop", "age", "rep", "treatment", "10_09_height_cm", "10_09_numleaf", "10_18_height_cm",  "10_18_numleaf", "10_23_height_cm", "10_23_numleaf", "10_30_height_cm", "10_30_numleaf", "height_pretrt_cm", "notes")
+
+weekly_size_tall <- weekly_size_tall[, col_order]
+
+weekly_size_tall_sorted <- weekly_size_tall %>% 
+  rename(`09_30_height_cm` = height_pretrt_cm) %>% 
+  pivot_longer(`10_09_height_cm`:`09_30_height_cm`) %>% 
+  separate(name, 6, into = c("date", "variable")) %>% 
+  pivot_wider(id_cols = c(pop, age, rep, treatment, date), names_from = variable, values_from = value, values_fn = mean) %>% 
+  mutate(date = as.Date(paste0(date, 2020), format = "%m_%d_%Y")) %>%
+  mutate_all(tolower) %>% 
+  mutate(age = case_when(age == "a1" ~ "7wk",
+                         age == "a2" ~ "5wk",
+                         age == "a3" ~ "3wk")) %>%
+   mutate(elevation = case_when(pop == "sq1" | pop == "wl2" | pop == "yo1" | pop == "sq3" ~ "high",
+                               pop == "dpr" | pop == "kc2" | pop == "wl1" ~ "intermediate",
+                               pop == "tm2" | pop == "bh" | pop == "ih" ~ "low"))
+
+weekly_size_tall_sorted  
+```
+
 
 ```{r}
 wilting_dates = read_xlsx("data/cbs_drought_project.xlsx", 
@@ -146,6 +173,24 @@ The numbers in this data sheet correspond to the day of the experiment: `day 0`,
 table(wilting_dates$age)
 ```
 *One age is "1".* Fixed on 4/4/2021. Data entry error.
+
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## Weekly Survey Analysis: Phenotypic Differences
 

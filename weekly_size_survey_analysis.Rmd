@@ -87,11 +87,11 @@ weekly_size_cleaned %>%
   filter(pop != "NA") %>% 
   ggplot(aes(x = pop, y = measurement, color = elevation)) +
   geom_boxplot() +
-  labs(x = "pop",
-       y = "height (cm)") +
-  ylim(0,8)+
-  ggsave("severe_drought_height_boxplot_new.pdf", path = "plots")
-  
+  labs(x = "Population",
+       y = "Height (cm)",
+       color = "Elevation",
+       title = "Height under Severe Drought Conditions") +
+  ylim(0,8)
 ```
 ```{r}
 weekly_size_cleaned %>% 
@@ -99,8 +99,10 @@ weekly_size_cleaned %>%
   filter(pop != "NA") %>% 
   ggplot(aes(x = pop, y = measurement, color = elevation)) +
   geom_boxplot() +
-  labs(x = "pop",
-       y = "height (cm)") +
+  labs(x = "Population",
+       y = "Height (cm)",
+       color = "Elevation",
+       title = "Height under Light Drought Conditions") +
   ylim(0, 10)
 ```
 ```{r}
@@ -109,8 +111,10 @@ weekly_size_cleaned %>%
   filter(pop != "NA") %>% 
   ggplot(aes(x = pop, y = measurement, color = elevation)) +
   geom_boxplot() +
-  labs(x = "pop",
-       y = "height (cm)") +
+  labs(x = "Population",
+       y = "Height (cm)",
+       color = "Elevation",
+       title = "Height under Control Conditions") +
   ylim(0, 10)
 ```
 ```{r}
@@ -123,6 +127,21 @@ weekly_size_cleaned %>%
        y = "height (cm)") +
   ylim(0, 10)
 ```
+
+```{r}
+weekly_size_cleaned %>% 
+  filter(size_measurement == "height") %>%
+  filter(measurement != "NA") %>% 
+  ggplot(aes(x = pop, y = measurement, fill = elevation)) +
+  geom_boxplot() +
+  labs(x = "pop",
+       y = "height (cm)") +
+  facet_wrap(~treatment)+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))+
+  ylim(0, 10)
+```
+
+
 ```{r}
 weekly_size_cleaned %>% 
   filter(size_measurement == "height") %>%
