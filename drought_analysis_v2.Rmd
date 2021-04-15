@@ -49,7 +49,7 @@ weekly_size = readxl::read_xlsx("data/cbs_drought_project.xlsx", sheet = "Weekly
   filter(is.na(notes)) %>% 
   select(-notes)
 
-weekly_size
+summary(weekly_size)
 
 ```
 
@@ -78,6 +78,8 @@ weekly_size_tall_sorted <- weekly_size %>%
          numleaf = as.numeric(numleaf))
 
 weekly_size_tall_sorted
+
+
 
 ```
 
@@ -128,7 +130,7 @@ wilting_dates_clean = wilting_dates %>%
 
 The numbers in this data sheet correspond to the day of the experiment: `day 0`, `day 2`, and so on and so forth. On a calendar, the first day of the experiment was 10/01/2020 and the first day of observations was 10/09/2020.
 MB: there are a lot of values <9 in the data. So is day 0 (or day 1?) October 1 or October 9?
-
+Answer: Day 0 = Oct 9
 
 
 Exploring data:
@@ -309,11 +311,35 @@ In this case, I think it's only worth plotting the severe drought treatment, bec
 # Can add a dummy value of a date after all others, but then I would crop this last value out when presenting
 
 weekly_pheno_cleaned %>% 
-  filter(treatment == "Severe drought") %>% 
+  filter(treatment == "Severe drought",
+         elevation == "Low") %>% 
   mutate(wilted = ifelse(is.na(wilted), 25, wilted)) %>%
   ggplot() +
   stat_ecdf(aes(x = wilted, color = age), geom = "step") +
-  facet_wrap(.~pop)
+  facet_wrap(.~pop, nrow = 1)
+ggsave("plots/wilting_over_time_low.pdf", height = 3, width = 8)
+
+
+weekly_pheno_cleaned %>% 
+  filter(treatment == "Severe drought",
+         elevation == "Intermediate") %>% 
+  mutate(wilted = ifelse(is.na(wilted), 25, wilted)) %>%
+  ggplot() +
+  stat_ecdf(aes(x = wilted, color = age), geom = "step") +
+  facet_wrap(.~pop, nrow = 1)
+ggsave("plots/wilting_over_time_int.pdf", height = 3, width = 8)
+
+
+weekly_pheno_cleaned %>% 
+  filter(treatment == "Severe drought",
+         elevation == "High") %>% 
+  mutate(wilted = ifelse(is.na(wilted), 25, wilted)) %>%
+  ggplot() +
+  stat_ecdf(aes(x = wilted, color = age), geom = "step") +
+  facet_wrap(.~pop, nrow = 1)
+ggsave("plots/wilting_over_time_high.pdf", height = 3, width = 11)
+
+
 
 # Alternative approach: use cumsum
 # This is a bit complicated but gives a bit more plotting flexibility
@@ -339,11 +365,85 @@ weekly_pheno_cleaned %>%
   geom_line(aes(x = wilted, y = prop_wilted, color = age)) +
   facet_wrap(.~pop)
 
-
 # Need to pull in rack data eventually as a random effect in models.
 
 ```
 
+Plot by age, size, treatment
+
+```{r}
+
+weekly_size_tall_sorted %>% 
+  filter(day_of_experiment == 30,
+         height_cm < 20) %>% 
+  ggplot() +
+  geom_boxplot(aes(x = age, fill = treatment, y = height_cm)) +
+  facet_wrap(.~pop, scales = "free_y")
+
+
+weekly_size_tall_sorted %>% 
+  filter(day_of_experiment == 30,
+         height_cm < 20,
+         elevation  == "Low") %>% 
+  ggplot() +
+  geom_boxplot(aes(x = treatment, fill = age, y = height_cm)) +
+  facet_wrap(.~pop, scales = "free_y")
+ggsave("plots/height_trt_age_low.pdf", height = 3, width = 10)
+
+weekly_size_tall_sorted %>% 
+  filter(day_of_experiment == 30,
+         height_cm < 20,
+         elevation  == "Intermediate") %>% 
+  ggplot() +
+  geom_boxplot(aes(x = treatment, fill = age, y = height_cm)) +
+  facet_wrap(.~pop, scales = "free_y")
+ggsave("plots/height_trt_age_int.pdf", height = 3, width = 10)
+
+weekly_size_tall_sorted %>% 
+  filter(day_of_experiment == 30,
+         height_cm < 20,
+         elevation  == "High") %>% 
+  ggplot() +
+  geom_boxplot(aes(x = treatment, fill = age, y = height_cm)) +
+  facet_wrap(.~pop, nrow = 1, scales = "free_y")
+ggsave("plots/height_trt_age_high.pdf", height = 3, width = 14)
+
+```
+
+Leaf counts
+
+```{r}
+weekly_size_tall_sorted %>% 
+  filter(day_of_experiment == 30,
+         elevation  == "Low") %>% 
+  group_by(pop, treatment, age) %>% 
+  summarize(mean_leaf_num = mean(numleaf)) %>% 
+  ggplot() +
+  geom_col(aes(x = treatment, fill = age, y = mean_leaf_num), position = position_dodge()) +
+  facet_wrap(.~pop, scales = "free_y")
+ggsave("plots/leaves_trt_age_low.pdf", height = 3, width = 10)
+
+weekly_size_tall_sorted %>% 
+  filter(day_of_experiment == 30,
+         elevation  == "Intermediate") %>% 
+  group_by(pop, treatment, age) %>% 
+  summarize(mean_leaf_num = mean(numleaf)) %>% 
+  ggplot() +
+  geom_col(aes(x = treatment, fill = age, y = mean_leaf_num), position = position_dodge()) +
+  facet_wrap(.~pop, scales = "free_y")
+ggsave("plots/leaves_trt_age_int.pdf", height = 3, width = 10)
+
+weekly_size_tall_sorted %>% 
+  filter(day_of_experiment == 30,
+         elevation  == "High") %>% 
+  group_by(pop, treatment, age) %>% 
+  summarize(mean_leaf_num = mean(numleaf)) %>% 
+  ggplot() +
+  geom_col(aes(x = treatment, fill = age, y = mean_leaf_num), position = position_dodge()) +
+  facet_wrap(.~pop, scales = "free_y", nrow = 1)
+ggsave("plots/leaves_trt_age_high.pdf", height = 3, width = 13)
+
+```
 
 
 
