@@ -45,8 +45,8 @@ weekly_size_tall = weekly_size %>%
 wilting_dates = read_xlsx("data/cbs_drought_project.xlsx", 
                            sheet = "Weekly Surveys (Flipped)") %>% 
   rename(pop = Population, rep = Replicate) %>% 
-  rename_all(.funs = tolower) %>% 
-  mutate(wilted = as.numeric(wilted))
+  rename_all(.funs = tolower) #%>% 
+  # mutate(wilted = as.numeric(wilted))
 # Some of these are still coded as month_day, let's make them consistent
 
 
@@ -97,6 +97,7 @@ summary(wilting_dates)
 # Let's make sure to write down metadata about how each of these was scored, i.e., what does a leaning vs. curled vs. wrinkled vs. wilted plant look like?
 # Also, let's document what the number means. Is it day of month or day of expt. and if day of expt, what is day 1?
 table(wilting_dates$age)
+table(wilting_dates$wilted)
 # One age is "1"
 
 ```
@@ -116,7 +117,7 @@ final_size = weekly_size_tall %>%
   filter(date == "2020-10-30") %>% 
   filter(height_cm > 0)
 
-hist(final_size$height_cm)
+hist(final_size$height_cm, breaks = 20)
 hist(log(final_size$height_cm))
 
 mod_fs = lmer(log(height_cm) ~ age*treatment + (1|pop), data = final_size)
@@ -129,8 +130,8 @@ plot(plot_fs)
 
 # Need to set this up as time-to-event model
 wilting_dates_severe = wilting_dates %>% 
-  filter(treatment == "Severe drought", age != 1) #%>% 
-  # mutate(wilted = ifelse(is.na(wilted), 30, wilted))
+  filter(treatment == "Severe drought", age != 1) %>% 
+  mutate(wilted = ifelse(is.na(wilted), 30, wilted))
 
 summary(wilting_dates_severe)
 
