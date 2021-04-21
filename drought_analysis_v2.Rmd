@@ -79,8 +79,6 @@ weekly_size_tall_sorted <- weekly_size %>%
 
 weekly_size_tall_sorted
 
-
-
 ```
 
 MB: I combined the chunk below with the one above. The issue, as you discovered, was that notes was interspersed with the size columns, but since the only note was about imposters, I just got rid of those in the data loading steps and dropped the notes columns up there. 
@@ -305,42 +303,58 @@ First, just doing the wilted response.
 In this case, I think it's only worth plotting the severe drought treatment, because there was only one instance of wilting in the other treatments. 
 
 ```{r}
-  
 # The simplest option is to use the ECDF option in ggplot. 
 # But, a trick: it removes NAs, so by default would drop plants that never wilted. We don't want that!
 # Can add a dummy value of a date after all others, but then I would crop this last value out when presenting
-
 weekly_pheno_cleaned %>% 
   filter(treatment == "Severe drought",
          elevation == "Low") %>% 
   mutate(wilted = ifelse(is.na(wilted), 25, wilted)) %>%
   ggplot() +
-  stat_ecdf(aes(x = wilted, color = age), geom = "step") +
-  facet_wrap(.~pop, nrow = 1)
+  stat_ecdf(aes(x = wilted, color = age), geom = "step", alpha = 0.7, size = 1.25) +
+  facet_wrap(.~pop, nrow = 1)+
+  labs(x = "Days",
+       y = "Proportion Wilted",
+       color = "Age",
+       title = "Low Elevation")+
+  scale_color_manual(values = c("#F92B42","#FCB576", "#64BFBD"))
 ggsave("plots/wilting_over_time_low.pdf", height = 3, width = 8)
+```
 
-
+```{r}
 weekly_pheno_cleaned %>% 
   filter(treatment == "Severe drought",
          elevation == "Intermediate") %>% 
   mutate(wilted = ifelse(is.na(wilted), 25, wilted)) %>%
   ggplot() +
-  stat_ecdf(aes(x = wilted, color = age), geom = "step") +
-  facet_wrap(.~pop, nrow = 1)
+  stat_ecdf(aes(x = wilted, color = age), geom = "step", alpha = 0.7, size = 1.25) +
+  facet_wrap(.~pop, nrow = 1)+
+  labs(x = "Days",
+       y = "Proportion Wilted",
+       color = "Age",
+       title = "Intermediate Elevation")+
+  scale_color_manual(values = c("#F92B42","#FCB576", "#64BFBD"))
 ggsave("plots/wilting_over_time_int.pdf", height = 3, width = 8)
+```
 
-
+```{r}
 weekly_pheno_cleaned %>% 
   filter(treatment == "Severe drought",
          elevation == "High") %>% 
   mutate(wilted = ifelse(is.na(wilted), 25, wilted)) %>%
   ggplot() +
-  stat_ecdf(aes(x = wilted, color = age), geom = "step") +
-  facet_wrap(.~pop, nrow = 1)
+  stat_ecdf(aes(x = wilted, color = age), geom = "step", alpha = 0.7, size = 1.15) +
+  facet_wrap(.~pop, nrow = 1)+
+  labs(x = "Days",
+       y = "Proportion Wilted",
+       color = "Age",
+       title = "High Elevation")+
+  scale_color_manual(values = c("#F92B42","#FCB576", "#64BFBD"))
 ggsave("plots/wilting_over_time_high.pdf", height = 3, width = 11)
+```
 
 
-
+```{r}
 # Alternative approach: use cumsum
 # This is a bit complicated but gives a bit more plotting flexibility
 
@@ -389,15 +403,15 @@ weekly_pheno_cleaned %>%
 Plot by age, size, treatment
 
 ```{r}
-
 weekly_size_tall_sorted %>% 
   filter(day_of_experiment == 30,
          height_cm < 20) %>% 
   ggplot() +
   geom_boxplot(aes(x = age, fill = treatment, y = height_cm)) +
   facet_wrap(.~pop, scales = "free_y")
+```
 
-
+```{r}
 weekly_size_tall_sorted %>% 
   filter(day_of_experiment == 30,
          height_cm < 20,
@@ -406,7 +420,10 @@ weekly_size_tall_sorted %>%
   geom_boxplot(aes(x = treatment, fill = age, y = height_cm)) +
   facet_wrap(.~pop, scales = "free_y")
 ggsave("plots/height_trt_age_low.pdf", height = 3, width = 10)
+```
 
+
+```{r}
 weekly_size_tall_sorted %>% 
   filter(day_of_experiment == 30,
          height_cm < 20,
@@ -415,7 +432,9 @@ weekly_size_tall_sorted %>%
   geom_boxplot(aes(x = treatment, fill = age, y = height_cm)) +
   facet_wrap(.~pop, scales = "free_y")
 ggsave("plots/height_trt_age_int.pdf", height = 3, width = 10)
+```
 
+```{r}
 weekly_size_tall_sorted %>% 
   filter(day_of_experiment == 30,
          height_cm < 20,
@@ -439,7 +458,9 @@ weekly_size_tall_sorted %>%
   geom_col(aes(x = treatment, fill = age, y = mean_leaf_num), position = position_dodge()) +
   facet_wrap(.~pop, scales = "free_y")
 ggsave("plots/leaves_trt_age_low.pdf", height = 3, width = 10)
+```
 
+```{r}
 weekly_size_tall_sorted %>% 
   filter(day_of_experiment == 30,
          elevation  == "Intermediate") %>% 
@@ -450,6 +471,10 @@ weekly_size_tall_sorted %>%
   facet_wrap(.~pop, scales = "free_y")
 ggsave("plots/leaves_trt_age_int.pdf", height = 3, width = 10)
 
+```
+
+
+```{r}
 weekly_size_tall_sorted %>% 
   filter(day_of_experiment == 30,
          elevation  == "High") %>% 
@@ -460,6 +485,72 @@ weekly_size_tall_sorted %>%
   facet_wrap(.~pop, scales = "free_y", nrow = 1)
 ggsave("plots/leaves_trt_age_high.pdf", height = 3, width = 13)
 
+```
+
+
+Survival
+```{r}
+weekly_pheno_cleaned %>% 
+  group_by(pop, treatment, age, elevation) %>% 
+  summarise(tot = n(),
+            survivors = sum(is.na(wilted))) %>% 
+  mutate(percent_survival = survivors/tot) %>% 
+  filter(treatment == "Severe drought") %>% 
+  filter(elevation == "High") %>% 
+  ggplot(aes(x = pop, y = percent_survival, fill = age))+
+  geom_col(position = "dodge")+
+  labs(x = "Population",
+       y = "Percent Survived",
+       title = "High Elevation",
+       fill = "Age")+
+  scale_fill_manual(values = c("#F92B42","#FCB576", "#64BFBD"))+
+  ggsave("plots/trt_survival_high.pdf", height = 3, width = 10)
+```
+
+```{r}
+weekly_pheno_cleaned %>% 
+  group_by(pop, treatment, age, elevation) %>% 
+  summarise(tot = n(),
+            survivors = sum(is.na(wilted))) %>% 
+  mutate(percent_survival = survivors/tot) %>% 
+  filter(treatment == "Severe drought") %>% 
+  filter(elevation == "Intermediate") %>% 
+  ggplot(aes(x = pop, y = percent_survival, fill = age))+
+  geom_col(position = "dodge")+
+  labs(x = "Population",
+       y = "Percent Survived",
+       title = "Intermediate Elevation",
+       fill = "Age")+
+  scale_fill_manual(values = c("#F92B42","#FCB576", "#64BFBD"))+
+  ggsave("plots/trt_survival_int.pdf", height = 3, width = 10)
+```
+
+```{r}
+weekly_pheno_cleaned %>% 
+  group_by(pop, treatment, age, elevation) %>% 
+  summarise(tot = n(),
+            survivors = sum(is.na(wilted))) %>% 
+  mutate(percent_survival = survivors/tot) %>% 
+  filter(treatment == "Severe drought") %>% 
+  filter(elevation == "Low") %>% 
+  ggplot(aes(x = pop, y = percent_survival, fill = age))+
+  geom_col(position = "dodge")+
+  labs(x = "Population",
+       y = "Percent Survived",
+       title = "Low Elevation",
+       fill = "Age")+
+  scale_fill_manual(values = c("#F92B42","#FCB576", "#64BFBD"))+
+  ggsave("plots/trt_survival_low.pdf", height = 3, width = 10)
+```
+
+Height over time
+```{r}
+weekly_size_tall_sorted %>% 
+  group_by(date, treatment, age, elevation) %>% 
+  filter(pop == "KC2") %>%
+  summarise(avg_height_cm = mean(height_cm))
+  #ggplot(aes(x = date, y = avg_height_cm, color = age))+
+  #geom_line()
 ```
 
 
