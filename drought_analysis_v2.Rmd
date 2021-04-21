@@ -369,6 +369,23 @@ weekly_pheno_cleaned %>%
 
 ```
 
+Plot final proportions wilting
+
+```{r}
+# check =
+weekly_pheno_cleaned %>% 
+  group_by(pop, age, treatment) %>% 
+  summarize(total = n(), count_wilted = sum(!is.na(wilted))) %>% 
+  mutate(prop_wilted = count_wilted/total) %>% 
+  filter(treatment == "Severe drought") %>% 
+  ggplot() +
+  geom_col(aes(x = pop, y = prop_wilted, fill = age), position = position_dodge()) +
+  facet_wrap(.~treatment)
+
+
+```
+
+
 Plot by age, size, treatment
 
 ```{r}
