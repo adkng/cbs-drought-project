@@ -531,9 +531,9 @@ Height over time
 weekly_size_tall_sorted %>% 
   group_by(date, treatment, age, elevation) %>% 
   filter(pop == "KC2") %>%
-  summarise(avg_height_cm = mean(height_cm))
-  #ggplot(aes(x = date, y = avg_height_cm, color = age))+
-  #geom_line()
+  summarise(avg_height_cm = mean(height_cm)) %>% 
+  ggplot(aes(x = date, y = avg_height_cm, color = age))+
+  geom_line()
 ```
 
 
