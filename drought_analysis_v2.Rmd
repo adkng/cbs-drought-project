@@ -385,6 +385,7 @@ weekly_pheno_cleaned %>%
 
 Plot final proportions wilting
 
+Megan's final wilting barplot
 ```{r}
 # check =
 weekly_pheno_cleaned %>% 
@@ -503,7 +504,7 @@ weekly_pheno_cleaned %>%
        y = "Percent Survived",
        title = "High Elevation",
        fill = "Age")+
-  scale_fill_manual(values = c("#F92B42","#FCB576", "#64BFBD"))+
+  scale_fill_manual(values = c("#F92B42","#FCB576", "#64BFBD")) +
   ggsave("plots/trt_survival_high.pdf", height = 3, width = 10)
 ```
 
@@ -521,7 +522,7 @@ weekly_pheno_cleaned %>%
        y = "Percent Survived",
        title = "Intermediate Elevation",
        fill = "Age")+
-  scale_fill_manual(values = c("#F92B42","#FCB576", "#64BFBD"))+
+  scale_fill_manual(values = c("#F92B42","#FCB576", "#64BFBD")) +
   ggsave("plots/trt_survival_int.pdf", height = 3, width = 10)
 ```
 
@@ -539,18 +540,43 @@ weekly_pheno_cleaned %>%
        y = "Percent Survived",
        title = "Low Elevation",
        fill = "Age")+
-  scale_fill_manual(values = c("#F92B42","#FCB576", "#64BFBD"))+
+  scale_fill_manual(values = c("#F92B42","#FCB576", "#64BFBD")) +
   ggsave("plots/trt_survival_low.pdf", height = 3, width = 10)
 ```
 
 Height over time
+
 ```{r}
+# The initial reason you were getting the vertical lines was that within each age group, there were multiple treatments. So the line was connecting each treatment on each date, then running to the next date. 
+# So, I added treatment as a line type to deal with this.
+# I also tried out averaging inside the ggplot chunk (with stat_summary()), this lets you also plot points easily if you want (it's nice to show the raw data alongside averages).
+# A few options:
+
 weekly_size_tall_sorted %>% 
   group_by(date, treatment, age, elevation) %>% 
   filter(pop == "KC2") %>%
-  summarise(avg_height_cm = mean(height_cm))
-  #ggplot(aes(x = date, y = avg_height_cm, color = age))+
-  #geom_line()
+  summarise(avg_height_cm = mean(height_cm, na.rm = TRUE)) %>%
+  ggplot() +
+  geom_line(aes(x = date, y = avg_height_cm, color = age, linetype = treatment)) 
+  
+# OR
+
+weekly_size_tall_sorted %>% 
+  filter(pop == "KC2") %>%
+  ggplot() +
+  stat_summary(aes(x = date, y = height_cm, color = age, linetype = treatment), geom = "line", fun.data = "mean_se") +
+  geom_point(aes(x = date, y = height_cm, color = age, shape = treatment), position  = position_jitterdodge(), alpha = 0.6)
+
+# Maybe a bit messy.
+
+# It's also possible to average within treatments or ages when plotting to show the effects of one or the other, by just leaving out the color or linetype arguments. We should check for interaction effects before going too far with these visualizations, i.e., if the effect of treatment depends on age, then just averaging across ages might kind of misrepresent treatment effects. 
+
+weekly_size_tall_sorted %>% 
+  filter(pop == "KC2") %>%
+  ggplot() +
+  stat_summary(aes(x = date, y = height_cm, linetype = treatment), geom = "line", fun.data = "mean_se") +
+  geom_point(aes(x = date, y = height_cm, shape = treatment), position  = position_jitterdodge(), alpha = 0.6)
+
 ```
 
 
