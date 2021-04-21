@@ -555,9 +555,6 @@ Height over time
 weekly_size_tall_sorted %>% 
   group_by(date, treatment, age, elevation) %>% 
   filter(pop == "KC2") %>%
-  summarise(avg_height_cm = mean(height_cm)) %>% 
-  ggplot(aes(x = date, y = avg_height_cm, color = age))+
-  geom_line()
   summarise(avg_height_cm = mean(height_cm, na.rm = TRUE)) %>%
   ggplot() +
   geom_line(aes(x = date, y = avg_height_cm, color = age, linetype = treatment)) 
@@ -581,5 +578,54 @@ weekly_size_tall_sorted %>%
   geom_point(aes(x = date, y = height_cm, shape = treatment), position  = position_jitterdodge(), alpha = 0.6)
 ```
 
+```{r}
+weekly_size_tall_sorted %>% 
+  group_by(pop, day_of_experiment, treatment, age, elevation) %>%
+  filter(elevation == "High") %>% 
+  summarise(avg_height_cm = mean(height_cm, na.rm = TRUE)) %>%
+  ggplot() +
+  geom_line(aes(x = day_of_experiment, y = avg_height_cm, color = age, linetype = treatment), size = 1.05, alpha = 0.7)+
+  facet_wrap(.~pop, nrow = 1, scales = "free_y") +
+  labs(x = "Day of Experiment",
+       y = "Average Height (cm)",
+       title = "High Elevation",
+       color = "Age",
+       linetype = "Treatment")+
+  scale_color_manual(values = c("#F92B42","#FCB576", "#64BFBD"))+
+  ggsave("plots/avg_height_time_high.pdf", height = 3, width = 13)
+```
 
+```{r}
+weekly_size_tall_sorted %>% 
+  group_by(pop, day_of_experiment, treatment, age, elevation) %>%
+  filter(elevation == "Intermediate") %>% 
+  summarise(avg_height_cm = mean(height_cm, na.rm = TRUE)) %>%
+  ggplot() +
+  geom_line(aes(x = day_of_experiment, y = avg_height_cm, color = age, linetype = treatment), size = 1.05, alpha = 0.7)+
+  facet_wrap(.~pop, nrow = 1) +
+  labs(x = "Day of Experiment",
+       y = "Average Height (cm)",
+       title = "Intermediate Elevation",
+       color = "Age",
+       linetype = "Treatment")+
+  scale_color_manual(values = c("#F92B42","#FCB576", "#64BFBD"))+
+  ggsave("plots/avg_height_time_int.pdf", height = 3, width = 10)
+```
+
+```{r}
+weekly_size_tall_sorted %>% 
+  group_by(pop, day_of_experiment, treatment, age, elevation) %>%
+  filter(elevation == "Low") %>% 
+  summarise(avg_height_cm = mean(height_cm, na.rm = TRUE)) %>%
+  ggplot() +
+  geom_line(aes(x = day_of_experiment, y = avg_height_cm, color = age, linetype = treatment), size = 1.05, alpha = 0.7)+
+  facet_wrap(.~pop, nrow = 1) +
+  labs(x = "Day of Experiment",
+       y = "Average Height (cm)",
+       title = "Low Elevation",
+       color = "Age",
+       linetype = "Treatment")+
+  scale_color_manual(values = c("#F92B42","#FCB576", "#64BFBD"))+
+  ggsave("plots/avg_height_time_low.pdf", height = 3, width = 10)
+```
 
